@@ -61,6 +61,65 @@ def recruiter_sendable_row_count(csv_path: str | Path) -> int:
         return sendable_rows
 
 
+def recruiter_csv_is_placeholder(csv_path: str | Path) -> bool:
+    path = Path(csv_path)
+    if not path.exists():
+        return False
+
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        saw_row = False
+        for row in reader:
+            saw_row = True
+            status = (row.get("RocketReach Status") or "").strip().lower()
+            if status != "pending_enrichment":
+                return False
+        return saw_row
+
+
+def ensure_placeholder_recruiter_csv(
+    applied_csv_path: str | Path,
+    recruiters_csv_path: str | Path,
+    enriched_header: list[str],
+    status: str = "pending_enrichment",
+) -> int:
+    applied_path = Path(applied_csv_path)
+    recruiters_path = Path(recruiters_csv_path)
+    if not applied_path.exists():
+        return 0
+
+    recruiters_path.parent.mkdir(parents=True, exist_ok=True)
+    row_count = 0
+    with applied_path.open("r", encoding="utf-8-sig", newline="") as source, recruiters_path.open(
+        "w",
+        encoding="utf-8-sig",
+        newline="",
+    ) as target:
+        reader = csv.DictReader(source)
+        writer = csv.DictWriter(target, fieldnames=enriched_header)
+        writer.writeheader()
+        for row in reader:
+            clean_row = {
+                "Date": (row.get("Date") or "").strip(),
+                "Company Name": (row.get("Company Name") or "").strip(),
+                "Position": (row.get("Position") or "").strip(),
+                "Job Link": (row.get("Job Link") or "").strip(),
+                "Submitted": (row.get("Submitted") or "").strip(),
+                "HR Name": (row.get("HR Name") or "").strip(),
+                "HR Position": (row.get("HR Position") or "").strip(),
+                "HR Profile Link": (row.get("HR Profile Link") or "").strip(),
+                "HR Email": "",
+                "HR Secondary Email": "",
+                "HR Email Preview": "",
+                "HR Contact": "",
+                "HR Contact Preview": "",
+                "RocketReach Status": status,
+            }
+            writer.writerow(clean_row)
+            row_count += 1
+    return row_count
+
+
 def read_last_json_object(log_path: str | Path) -> dict:
     path = Path(log_path)
     if not path.exists():

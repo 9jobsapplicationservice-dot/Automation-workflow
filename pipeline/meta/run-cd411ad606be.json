@@ -1,0 +1,29 @@
+{
+  "run_id": "run-cd411ad606be",
+  "status": "failed",
+  "config_path": "",
+  "created_at": "2026-04-04T07:47:24+00:00",
+  "updated_at": "2026-04-04T07:52:47+00:00",
+  "stage_started_at": "2026-04-04T07:52:08+00:00",
+  "stage_finished_at": "2026-04-04T07:52:47+00:00",
+  "retry_count": 0,
+  "note": "LinkedIn output exists but contains zero saved applied rows.",
+  "last_error": "No applied jobs were written to applied_jobs.csv.",
+  "paths": {
+    "run_dir": "D:\\Automation- Project\\pipeline\\runs",
+    "applied_csv": "D:\\Automation- Project\\pipeline\\runs\\applied_jobs.csv",
+    "recruiters_csv": "D:\\Automation- Project\\pipeline\\runs\\recruiters_enriched.csv",
+    "send_report_csv": "D:\\Automation- Project\\pipeline\\reports\\run-cd411ad606be.csv",
+    "manifest_json": "D:\\Automation- Project\\pipeline\\meta\\run-cd411ad606be.json",
+    "logs_dir": "D:\\Automation- Project\\pipeline\\logs\\run-cd411ad606be",
+    "linkedin_stdout_log": "D:\\Automation- Project\\pipeline\\logs\\run-cd411ad606be\\linkedin.stdout.log",
+    "linkedin_stderr_log": "D:\\Automation- Project\\pipeline\\logs\\run-cd411ad606be\\linkedin.stderr.log",
+    "rocketreach_stdout_log": "D:\\Automation- Project\\pipeline\\logs\\run-cd411ad606be\\rocketreach.stdout.log",
+    "rocketreach_stderr_log": "D:\\Automation- Project\\pipeline\\logs\\run-cd411ad606be\\rocketreach.stderr.log"
+  },
+  "artifacts": {
+    "applied_csv_exists": true,
+    "recruiters_csv_exists": false,
+    "send_report_exists": false
+  }
+}

@@ -6,7 +6,7 @@ from pathlib import Path
 from .adapters import StageError, TransientStageError, preflight_linkedin_runtime, run_linkedin_stage, run_rocketreach_stage
 from .constants import APPLIED_JOBS_HEADERS, DEFAULT_POLL_INTERVAL_SECONDS, ENRICHED_RECRUITER_HEADERS, MAX_ROCKETREACH_RETRIES
 from .storage import PipelineStore
-from .utils import csv_has_expected_header, csv_row_count, utc_now_iso
+from .utils import csv_has_expected_header, csv_row_count, ensure_placeholder_recruiter_csv, recruiter_csv_is_placeholder, utc_now_iso
 
 
 def build_linkedin_note(summary: dict) -> str:
@@ -98,6 +98,8 @@ class PipelineWorker:
             record = self.store.get_run(run_id)
 
             if csv_has_expected_header(record["recruiters_csv_path"], ENRICHED_RECRUITER_HEADERS):
+                if recruiter_csv_is_placeholder(record["recruiters_csv_path"]):
+                    return self._run_rocketreach(run_id)
                 recruiters_rows = csv_row_count(record["recruiters_csv_path"])
                 note = "Recruiter enrichment already present. Waiting for email review."
                 if recruiters_rows == 0:
@@ -179,6 +181,26 @@ class PipelineWorker:
         try:
             linkedin_stats = run_linkedin_stage(record, python_executable=preflight.executable)
         except StageError as error:
+            if csv_has_expected_header(record["applied_csv_path"], APPLIED_JOBS_HEADERS):
+                recovered_rows = csv_row_count(record["applied_csv_path"])
+                if recovered_rows > 0:
+                    ensure_placeholder_recruiter_csv(
+                        record["applied_csv_path"],
+                        record["recruiters_csv_path"],
+                        ENRICHED_RECRUITER_HEADERS,
+                        status="pending_enrichment",
+                    )
+                    return self.store.update_run(
+                        run_id,
+                        status="queued",
+                        note=(
+                            "LinkedIn stage ended with an error after saving applied jobs. "
+                            f"Recovered {recovered_rows} applied row(s) and queued RocketReach enrichment."
+                        ),
+                        last_error=str(error),
+                        retry_count=0,
+                        stage_finished_at=utc_now_iso(),
+                    )
             return self.store.update_run(
                 run_id,
                 status="failed",
@@ -208,6 +230,13 @@ class PipelineWorker:
                 retry_count=0,
                 stage_finished_at=utc_now_iso(),
             )
+
+        ensure_placeholder_recruiter_csv(
+            record["applied_csv_path"],
+            record["recruiters_csv_path"],
+            ENRICHED_RECRUITER_HEADERS,
+            status="pending_enrichment",
+        )
 
         return self.store.update_run(
             run_id,
